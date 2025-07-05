@@ -6,6 +6,7 @@ class VideoController extends GetxController {
   RxBool isInitialized = false.obs;
   RxBool isPlaying = false.obs;
   Rx<Duration> position = Duration.zero.obs;
+  RxBool isMuted = false.obs;
   Rx<Duration> duration = Duration.zero.obs;
 
   Future<void> loadVideo(String url) async {
@@ -41,6 +42,16 @@ class VideoController extends GetxController {
   void onClose() {
     videoPlayerController.dispose();
     super.onClose();
+  }
+  
+  void toggleMute() {
+    if (isMuted.value) {
+      videoPlayerController.setVolume(1.0);
+      isMuted.value = false;
+    } else {
+      videoPlayerController.setVolume(0.0);
+      isMuted.value = true;
+    }
   }
 
   Rx<bool> isVisible = false.obs;
