@@ -42,4 +42,6 @@ class VideoController extends GetxController {
     videoPlayerController.dispose();
     super.onClose();
   }
+
+  Rx<bool> isVisible = false.obs;
 }

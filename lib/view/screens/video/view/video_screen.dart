@@ -53,23 +53,28 @@ class VideoScreen extends StatelessWidget {
               children: [
                 // Video
                 controller.isInitialized.value
-                    ? FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width:
-                              controller.videoPlayerController.value.size.width,
-                          height: controller
-                              .videoPlayerController
-                              .value
-                              .size
-                              .height,
-                          child: VideoPlayer(controller.videoPlayerController),
+                    ? GestureDetector(
+                      onTap: () {
+                          controller.isVisible.value = !controller.isVisible.value;
+                        },
+                      child: FittedBox(
+                          fit: BoxFit.cover,
+                          child: SizedBox(
+                            width:
+                                controller.videoPlayerController.value.size.width,
+                            height: controller
+                                .videoPlayerController
+                                .value
+                                .size
+                                .height,
+                            child: VideoPlayer(controller.videoPlayerController),
+                          ),
                         ),
-                      )
+                    )
                     : const Center(child: CircularProgressIndicator()),
 
                 // Play/Pause button
-                Center(
+             controller.isVisible.value ?   Center(
                   child: GestureDetector(
                     onTap: controller.togglePlayback,
                     child: Container(
@@ -88,10 +93,10 @@ class VideoScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
+                ): const SizedBox.shrink(),
 
                 // Progress Bar at bottom
-                Positioned(
+              controller.isVisible .value ?  Positioned(
                   left: 20.w,
                   right: 20.w,
                   bottom: 30.h,
@@ -132,7 +137,7 @@ class VideoScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
+                ) : const SizedBox.shrink(),
               ],
             );
           });
