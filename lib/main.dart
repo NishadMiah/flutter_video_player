@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_video_player/core/app_routes/app_routes.dart';
 import 'package:flutter_video_player/core/dependency/dependency_injection.dart';
 import 'package:flutter_video_player/utils/app_colors/app_colors.dart';
+import 'package:flutter_video_player/view/screens/view/better_video_player.dart';
 import 'package:flutter_video_player/view/screens/view/custom_video_player.dart';
 import 'package:get/get.dart';
 
@@ -27,7 +28,10 @@ class MyApp extends StatelessWidget {
           scaffoldBackgroundColor: AppColors.backgroundClr,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         ),
-        home: CustomVideoPlayer(),
+        home: VideoPlayerMain(
+          videoUrl:
+              'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        ),
         // defaultTransition: Transition.fadeIn,
         // transitionDuration: const Duration(milliseconds: 200),
         // initialRoute: AppRoutes.videoScreen,
