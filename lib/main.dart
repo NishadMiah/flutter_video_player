@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
         // transitionDuration: const Duration(milliseconds: 200),
         // initialRoute: AppRoutes.videoScreen,
         // getPages: AppRoutes.routes,
-        // initialBinding: DependencyInjection(),
+        initialBinding: DependencyInjection(),
       ),
     );
   }
