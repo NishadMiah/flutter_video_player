@@ -17,18 +17,15 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   @override
   void initState() {
     super.initState();
-    // Force landscape mode
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-    // Hide system UI for immersive experience
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   @override
   void dispose() {
-    // Restore orientations
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -49,17 +46,15 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
         }
 
         return GestureDetector(
-          onTap: controller.toggleControls,
+          onTap: controller.isLocked.value ? controller.toggleLockOverlay : controller.toggleControls,
           child: Stack(
             children: [
-              // Video Player
               Center(
                 child: AspectRatio(
                   aspectRatio: controller.videoPlayerController!.value.aspectRatio,
                   child: VideoPlayer(controller.videoPlayerController!),
                 ),
               ),
-              // Brightness overlay
               Positioned.fill(
                 child: Obx(
                   () => IgnorePointer(
@@ -69,13 +64,21 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                   ),
                 ),
               ),
-              // Controls Overlay
               Obx(
                 () => AnimatedOpacity(
-                  opacity: controller.showControls.value ? 1.0 : 0.0,
+                  opacity: controller.isLocked.value && !controller.showLockOverlay.value
+                      ? 0.0
+                      : controller.showControls.value && !controller.isLocked.value
+                          ? 1.0
+                          : 0.0,
                   duration: const Duration(milliseconds: 300),
                   child: _buildControlsOverlay(),
                 ),
+              ),
+              Obx(
+                () => controller.isLocked.value && controller.showLockOverlay.value
+                    ? _buildLockOverlay()
+                    : const SizedBox.shrink(),
               ),
             ],
           ),
@@ -111,6 +114,22 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     );
   }
 
+  Widget _buildLockOverlay() {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black54,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: IconButton(
+          icon: const Icon(Icons.lock_open, color: Colors.white, size: 32),
+          onPressed: controller.toggleLock,
+        ),
+      ),
+    );
+  }
+
   Widget _buildTopBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -118,7 +137,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
-            onPressed: Get.back,
+            onPressed: controller.isLocked.value ? null : Get.back,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -132,15 +151,21 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
           ),
           IconButton(
             icon: const Icon(Icons.cast, color: Colors.white, size: 22),
-            onPressed: () => _showNotImplementedSnackbar(),
+            onPressed: controller.isLocked.value ? null : () => _showNotImplementedSnackbar(),
           ),
           IconButton(
-            icon: const Icon(Icons.lock_open, color: Colors.white, size: 22),
-            onPressed: () => _showNotImplementedSnackbar(),
+            icon: Obx(
+              () => Icon(
+                controller.isLocked.value ? Icons.lock : Icons.lock_open,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            onPressed: controller.toggleLock,
           ),
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white, size: 22),
-            onPressed: () => _showNotImplementedSnackbar(),
+            onPressed: controller.isLocked.value ? null : () => _showNotImplementedSnackbar(),
           ),
         ],
       ),
@@ -150,28 +175,26 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   Widget _buildCenterControls() {
     return Row(
       children: [
-        // Brightness Control
         _buildGestureControl(
           width: 100,
           showControl: controller.showBrightnessControl,
           value: controller.brightness,
           icon: Icons.brightness_6,
-          onDragUpdate: controller.adjustBrightness,
+          onDragUpdate: controller.isLocked.value ? (_) {} : controller.adjustBrightness,
         ),
         const Spacer(),
-        // Play/Pause Controls
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildControlButton(
               icon: Icons.replay_10,
               label: '-10s',
-              onTap: controller.seekBackward,
+              onTap: controller.isLocked.value ? () {} : controller.seekBackward,
             ),
             const SizedBox(width: 35),
             Obx(
               () => GestureDetector(
-                onTap: controller.togglePlayPause,
+                onTap: controller.isLocked.value ? () {} : controller.togglePlayPause,
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
@@ -190,12 +213,11 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
             _buildControlButton(
               icon: Icons.forward_10,
               label: '+10s',
-              onTap: controller.seekForward,
+              onTap: controller.isLocked.value ? () {} : controller.seekForward,
             ),
           ],
         ),
         const Spacer(),
-        // Volume Control
         _buildGestureControl(
           width: 100,
           showControl: controller.showVolumeControl,
@@ -205,7 +227,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
               : controller.volume.value < 0.5
                   ? Icons.volume_down
                   : Icons.volume_up,
-          onDragUpdate: controller.adjustVolume,
+          onDragUpdate: controller.isLocked.value ? (_) {} : controller.adjustVolume,
         ),
       ],
     );
@@ -219,12 +241,14 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     required Function(double) onDragUpdate,
   }) {
     return GestureDetector(
-      onVerticalDragStart: (_) => showControl.value = true,
-      onVerticalDragUpdate: (details) {
-        final sensitivity = 0.005;
-        onDragUpdate(value.value - details.delta.dy * sensitivity);
-      },
-      onVerticalDragEnd: (_) => controller.hideControlAfterDelay(showControl),
+      onVerticalDragStart: controller.isLocked.value ? null : (_) => showControl.value = true,
+      onVerticalDragUpdate: controller.isLocked.value
+          ? null
+          : (details) {
+              final sensitivity = 0.005;
+              onDragUpdate(value.value - details.delta.dy * sensitivity);
+            },
+      onVerticalDragEnd: controller.isLocked.value ? null : (_) => controller.hideControlAfterDelay(showControl),
       child: Container(
         width: width,
         color: Colors.transparent,
@@ -306,7 +330,6 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Progress Bar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
@@ -329,7 +352,9 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                       value: controller.currentPosition.value.inSeconds.toDouble(),
                       min: 0,
                       max: controller.totalDuration.value.inSeconds.toDouble(),
-                      onChanged: (value) => controller.seekToPosition(Duration(seconds: value.toInt())),
+                      onChanged: controller.isLocked.value
+                          ? null
+                          : (value) => controller.seekToPosition(Duration(seconds: value.toInt())),
                       activeColor: Colors.red,
                       inactiveColor: Colors.white.withOpacity(0.3),
                     ),
@@ -345,22 +370,21 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
             ],
           ),
         ),
-        // Bottom Buttons
         Padding(
           padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12, top: 4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildBottomButton(Icons.video_library, 'Episodes', controller.showEpisodeList),
-              _buildBottomButton(Icons.aspect_ratio, 'Aspect Ratio', controller.changeAspectRatio),
+              _buildBottomButton(Icons.video_library, 'Episodes', controller.isLocked.value ? () {} : controller.showEpisodeList),
+              _buildBottomButton(Icons.aspect_ratio, 'Aspect Ratio', controller.isLocked.value ? () {} : controller.changeAspectRatio),
               Obx(
                 () => _buildBottomButton(
                   Icons.speed,
                   'Speed (${controller.playbackSpeed.value}x)',
-                  controller.changePlaybackSpeed,
+                  controller.isLocked.value ? () {} : controller.changePlaybackSpeed,
                 ),
               ),
-              _buildBottomButton(Icons.skip_next, 'Next Episode', controller.nextEpisode),
+              _buildBottomButton(Icons.skip_next, 'Next Episode', controller.isLocked.value ? () {} : controller.nextEpisode),
             ],
           ),
         ),

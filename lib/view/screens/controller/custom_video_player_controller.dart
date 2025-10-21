@@ -14,6 +14,8 @@ class CustomVideoPlayerController extends GetxController {
   final showControls = true.obs;
   final showBrightnessControl = false.obs;
   final showVolumeControl = false.obs;
+  final showLockOverlay = false.obs;
+  final isLocked = false.obs;
   final currentPosition = Duration.zero.obs;
   final totalDuration = Duration.zero.obs;
   final playbackSpeed = 1.0.obs;
@@ -48,13 +50,7 @@ class CustomVideoPlayerController extends GetxController {
       videoPlayerController!.pause();
     } catch (e) {
       isLoading.value = false;
-      Get.showSnackbar(
-        GetSnackBar(
-          message: 'Failed to load video: $e',
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackbar('Failed to load video: $e', backgroundColor: Colors.red);
     }
   }
 
@@ -124,6 +120,23 @@ class CustomVideoPlayerController extends GetxController {
     }
   }
 
+  void toggleLock() {
+    isLocked.value = !isLocked.value;
+    showControls.value = false;
+    showLockOverlay.value = true;
+    _showSnackbar(isLocked.value ? 'Screen locked' : 'Screen unlocked');
+    _startHideControlsTimer();
+  }
+
+  void toggleLockOverlay() {
+    showLockOverlay.value = !showLockOverlay.value;
+    if (showLockOverlay.value) {
+      _startHideControlsTimer();
+    } else {
+      _cancelHideControlsTimer();
+    }
+  }
+
   void hideControlAfterDelay(RxBool control) {
     _startHideControlsTimer();
   }
@@ -135,6 +148,7 @@ class CustomVideoPlayerController extends GetxController {
         showControls.value = false;
         showBrightnessControl.value = false;
         showVolumeControl.value = false;
+        showLockOverlay.value = false;
       }
     });
   }
@@ -181,12 +195,12 @@ class CustomVideoPlayerController extends GetxController {
     _showSnackbar('Aspect ratio changed');
   }
 
-  void _showSnackbar(String message) {
+  void _showSnackbar(String message, {Color backgroundColor = Colors.black54}) {
     Get.showSnackbar(
       GetSnackBar(
         message: message,
         duration: const Duration(seconds: 1),
-        backgroundColor: Colors.black54,
+        backgroundColor: backgroundColor,
       ),
     );
   }
