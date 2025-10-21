@@ -1,4 +1,4 @@
-import 'package:flutter_video_player/view/screens/video/view/video_screen.dart';
+import 'package:flutter_video_player/view/screens/view/video_screen.dart';
 import 'package:get/get.dart';
 
 class AppRoutes {

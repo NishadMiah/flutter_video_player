@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_video_player/view/screens/video/controller/video_controller.dart';
-import 'package:flutter_video_player/view/screens/video/widgets/video_header.dart';
+import 'package:flutter_video_player/view/screens/controller/video_controller.dart';
+import 'package:flutter_video_player/view/screens/widgets/video_header.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 
